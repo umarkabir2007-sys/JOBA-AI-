@@ -107,8 +107,8 @@ def analyze_scholarship_requirements(url):
         soup = BeautifulSoup(response.text, 'html.parser')
         text = soup.get_text()
         keywords = ['GPA', 'IELTS', 'TOEFL', 'recommendation', 'statement of purpose', 
-                    'transcript', 'deadline', 'eligibility', 'requirement', 'documents',
-                    'certificate', 'essay', 'CV', 'resume', 'application fee']
+                    'transcript', 'deadline', 'eligibility', 'documents', 'certificate', 
+                    'essay', 'CV', 'resume', 'application fee', 'requirement']
         found = []
         for kw in keywords:
             if kw.lower() in text.lower():
@@ -120,9 +120,39 @@ def analyze_scholarship_requirements(url):
         if found:
             return "\n".join(found[:8])
         else:
-            return "No specific requirements found. Please visit the official website."
+            return "No specific requirements found. Please visit the official website for more details."
     except Exception as e:
         return f"Could not fetch requirements: {str(e)}"
+
+# ---------- JOB POSTINGS ----------
+JOBS_FILE = "jobs_posted.json"
+
+def load_jobs():
+    if os.path.exists(JOBS_FILE):
+        with open(JOBS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+def save_jobs(jobs):
+    with open(JOBS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(jobs, f, indent=2)
+
+def post_job(title, company, location, description, salary, contact_phone, employer_email):
+    jobs = load_jobs()
+    jobs.append({
+        'title': title,
+        'company': company,
+        'location': location,
+        'description': description,
+        'salary': salary,
+        'contact_phone': contact_phone,
+        'employer_email': employer_email,
+        'date': datetime.now().strftime("%Y-%m-%d")
+    })
+    save_jobs(jobs)
+
+def get_all_jobs():
+    return load_jobs()
 
 # ---------- CV DATA STORAGE ----------
 CV_DATA_FILE = "cv_data.json"
@@ -142,27 +172,3 @@ def get_cv_data(email):
             all_cv = json.load(f)
             return all_cv.get(email, None)
     return None
-
-# ---------- PAYMENT STATUS ----------
-PAYMENT_FILE = "payments.json"
-
-def save_payment_status(email, feature, action, value=None):
-    payments = {}
-    if os.path.exists(PAYMENT_FILE):
-        with open(PAYMENT_FILE, 'r', encoding='utf-8') as f:
-            payments = json.load(f)
-    if action == "set":
-        if email not in payments:
-            payments[email] = {}
-        payments[email][feature] = value
-        with open(PAYMENT_FILE, 'w', encoding='utf-8') as f:
-            json.dump(payments, f, indent=2)
-        return value
-    else:
-        return payments.get(email, {}).get(feature, False)
-
-# ---------- PAYMENT VERIFICATION (simulated) ----------
-def verify_flutterwave_payment(tx_ref):
-    if tx_ref and len(tx_ref) > 5:
-        return True
-    return False
